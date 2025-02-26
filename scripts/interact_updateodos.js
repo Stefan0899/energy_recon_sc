@@ -1,10 +1,11 @@
 const hre = require("hardhat");
 
 async function main() {
-    const contractAddress = "0x9A676e781A523b5d0C0e43731313A708CB607508";  // ✅ Replace with deployed contract address
-    const providerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"; // ✅ Explicitly define the provider
+    const contractAddress = "0xc0F115A19107322cFBf1cDBC7ea011C19EbDB4F8";  // ✅ Replace with deployed contract address
+    const providerAddress = "0xdD2FD4581271e230360230F9337D5c0430Bf44C0"; // ✅ Explicitly define the provider
     const provider = await hre.ethers.getSigner(providerAddress); // ✅ Explicitly get signer for this address
     const user = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";  // ✅ Replace with a test user wallet
+    const distributor = "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E"; // ✅ Distributor address (must match assigned distributor)
 
     // ✅ Get deployed contract instance
     const contract = await hre.ethers.getContractAt("SimplePayment_v1_o_up", contractAddress, provider);
@@ -17,21 +18,34 @@ async function main() {
     const offODO = 392; //+100
 
     // ✅ Replace with deployed token addresses
-    const E1Token = "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321";
-    const E2Token = "0xdAD42D43ecE0f6e8da8c2BCbC6A25FF6b3922C58";
-    const E3Token = "0xCBd5431cC04031d089c90E7c83288183A6Fe545d";
+    const E1Token = "0xa16E02E87b7454126E5E10d957A927A7F5B5d2be";
+    const E2Token = "0xB7A5bd0345EF1Cc5E66bf61BdeC17D2461fBd968";
+    const E3Token = "0xeEBe00Ac0756308ac4AaBfD76c05c4F3088B8883";
 
-    // ✅ Call updateOdometersAndCalculateBill (ODOs must be pre-calculated)
-    const tx = await contract.updateOdometersAndCalculateBill(user, E1Token, E2Token, E3Token, peakODO, stdODO, offODO);
+    // ✅ Call updateOdometersAndCalculateBill with distributor address
+    console.log(`🔹 Calling updateOdometersAndCalculateBill for user: ${user} with distributor: ${distributor}`);
+
+    const tx = await contract.updateOdometersAndCalculateBill(
+        user, 
+        E1Token, 
+        E2Token, 
+        E3Token, 
+        peakODO, 
+        stdODO, 
+        offODO,
+        distributor // ✅ Ensure distributor address is passed
+    );
+
     await tx.wait();
 
     console.log("✅ Odometers updated, token balances recorded, distributor usage calculated, and bill generated!");
-
 }
 
+// Execute the script
 main().catch((error) => {
-    console.error(error);
+    console.error("❌ Error:", error.reason || error.message);
     process.exitCode = 1;
 });
+
 
 

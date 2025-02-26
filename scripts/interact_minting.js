@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-    const factoryAddress = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788"; // Replace with actual factory address
+    const factoryAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with actual factory address
     const recipient = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"; // Replace with actual user address
     const amount = hre.ethers.parseEther("100");
 

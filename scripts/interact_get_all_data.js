@@ -1,11 +1,11 @@
 const hre = require("hardhat");
 
 async function main() {
-    const contractAddress = "0x9A676e781A523b5d0C0e43731313A708CB607508";  // ✅ Replace with actual contract address
+    const contractAddress = "0xc0F115A19107322cFBf1cDBC7ea011C19EbDB4F8";  // ✅ Replace with actual contract address
     const user = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";  // ✅ Replace with the user wallet you want to check
 
     const [provider] = await hre.ethers.getSigners(); // ✅ Gets the first signer
-    const contract = await hre.ethers.getContractAt("SimplePayment_v1", contractAddress, provider);
+    const contract = await hre.ethers.getContractAt("SimplePayment_v1_o_up", contractAddress, provider);
 
     console.log(`\n🔹 Fetching all energy data for: ${user}\n`);
 
@@ -46,15 +46,6 @@ async function main() {
     }
 
     try {
-        //Get Total Bill
-        const totalBill = await contract.getTotalBill(user);
-        console.log(`💰 Total Bill Owed: ${Number(totalBill) / 1e18} ETH`); // ✅ Convert wei to ETH        
-
-    } catch (error) {
-        console.log("❌ Error fetching total bill:", error.reason || error.message);
-    }
-
-    try {
         // ✅ Get EOM Token Balances
         const balances = await contract.getEOMTokenBalance(user);
         console.log(`\n🔄 EOM Token Balances:`);
@@ -64,6 +55,26 @@ async function main() {
 
     } catch (error) {
         console.log("❌ Error fetching EOM token balances:", error.reason || error.message);
+    }
+
+    try {
+
+        // ✅ Fetch the distribution fee
+        const distributionFee = await contract.getDistributionFee(user);
+        console.log(`💰 Distribution Fee Owed: ${Number(distributionFee) / 1e18} ETH`);
+
+    } catch (error) {
+        console.log("❌ Error fetching distribution fee:", error.reason || error.message);
+
+    }
+    
+    try {
+        //Get Total Bill
+        const totalBill = await contract.getTotalBill(user);
+        console.log(`💰 Total Bill Owed: ${Number(totalBill) / 1e18} ETH`); // ✅ Convert wei to ETH        
+
+    } catch (error) {
+        console.log("❌ Error fetching total bill:", error.reason || error.message);
     }
 
     console.log("\n✅ Data retrieval complete!\n");
