@@ -2,8 +2,8 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 
 async function main() {
-    const contractAddress = "0x5D42EBdBBa61412295D7b0302d6F50aC449Ddb4F"; // Replace with your deployed contract address
-    const userAddress = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"; // Replace with the user who will pay the fees
+    const contractAddress = "0x2Dd78Fd9B8F40659Af32eF98555B8b31bC97A351"; // Replace with your deployed contract address
+    const userAddress = "0x71bE63f3384f5fb98995898A86B02Fb2426c5788"; // Replace with the user who will pay the fees
 
     // ✅ Get the contract instance
     const signer = await ethers.getSigner(userAddress);

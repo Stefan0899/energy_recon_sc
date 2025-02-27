@@ -2,7 +2,9 @@
 pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
-
+interface IEnergyToken {
+    function clawback(address from, uint256 amount) external;
+}
 contract SimplePayment_v1_o_up {
     struct EnergyOdometer {
         uint32 peakODO;
@@ -366,6 +368,23 @@ contract SimplePayment_v1_o_up {
 
         //Calculate Energy fee, distribution fee, and transmission fee, and store these values
         storeFees(_user);
+
+        // Step 6: Retrieve Stored End-of-Month Balances
+        EnergyUsage memory eomBalances = endOfMonthBalances[_user];
+
+        if (eomBalances.peakUsage > 0) {  
+            uint256 remainingBalance = IERC20(_E1Token).balanceOf(_user);
+            IEnergyToken(_E1Token).clawback(_user, remainingBalance);
+        }
+        if (eomBalances.stdUsage > 0) {  
+            uint256 remainingBalance = IERC20(_E2Token).balanceOf(_user);
+            IEnergyToken(_E2Token).clawback(_user, remainingBalance);
+        }
+        if (eomBalances.offUsage > 0) {  
+            uint256 remainingBalance = IERC20(_E3Token).balanceOf(_user);
+            IEnergyToken(_E3Token).clawback(_user, remainingBalance);
+        }
+
     }
 
     function storeFees(address _user) internal {

@@ -2,7 +2,7 @@
 const hre = require("hardhat");
 
 async function main() {
-    const contractAddress = "0x5D42EBdBBa61412295D7b0302d6F50aC449Ddb4F";  // ✅ Replace with actual contract address
+    const contractAddress = "0x2Dd78Fd9B8F40659Af32eF98555B8b31bC97A351";  // ✅ Replace with actual contract address
     const owner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";  // ✅ Replace with the owner's wallet address
 
     // ✅ Define new provider, distributor, and transmittor addresses
@@ -10,7 +10,7 @@ async function main() {
     const newDistributor = "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E";  // ✅ Replace with the new distributor's address
     const newTransmittor = "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a";  // ✅ Replace with the new transmittor's address
     const newGenerator = "0x90F79bf6EB2c4f870365E785982E1f101E93b906";
-    const userAddress = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
+    const userAddress = "0x71bE63f3384f5fb98995898A86B02Fb2426c5788";
 
     // ✅ Get deployed contract instance
     const signer = await hre.ethers.getSigner(owner); // Ensure the owner calls this function

@@ -1,10 +1,10 @@
 const hre = require("hardhat");
 
 async function main() {
-    const factoryAddress = "0x9d4454B023096f34B160D6B654540c56A1F81688"; // Replace with actual factory contract address
+    const factoryAddress = "0x045857BDEAE7C1c7252d611eB24eB55564198b4C"; // Replace with actual factory contract address
     const sender = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"; // Replace with sender's wallet address
-    const recipient = "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"; // Replace with recipient's wallet address
-    const amount = hre.ethers.parseEther("10"); // Amount to transfer
+    const recipient = "0x71bE63f3384f5fb98995898A86B02Fb2426c5788"; // Replace with recipient's wallet address
+    const amount = hre.ethers.parseEther("85"); // Amount to transfer
 
     // Get the factory contract
     const factory = await hre.ethers.getContractAt("EnergyTokenFactory", factoryAddress);
@@ -20,11 +20,11 @@ async function main() {
     console.log("✅ E1 transfer successful");
 
     console.log(`Transferring 5 E2 tokens from ${sender} to ${recipient}...`);
-    await tokenE2.transfer(recipient, hre.ethers.parseEther("5"));
+    await tokenE2.transfer(recipient, hre.ethers.parseEther("35"));
     console.log("✅ E2 transfer successful");
 
     console.log(`Transferring 8 E3 tokens from ${sender} to ${recipient}...`);
-    await tokenE3.transfer(recipient, hre.ethers.parseEther("8"));
+    await tokenE3.transfer(recipient, hre.ethers.parseEther("71"));
     console.log("✅ E3 transfer successful");
 }
 

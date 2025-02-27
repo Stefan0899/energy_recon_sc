@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-    const factoryAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Replace with actual factory address
-    const user = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"; // Replace with the wallet address to check balance
+    const factoryAddress = "0x045857BDEAE7C1c7252d611eB24eB55564198b4C"; // Replace with actual factory address
+    const user = "0x71bE63f3384f5fb98995898A86B02Fb2426c5788"; // Replace with the wallet address to check balance
 
     const factory = await hre.ethers.getContractAt("EnergyTokenFactory", factoryAddress);
     
