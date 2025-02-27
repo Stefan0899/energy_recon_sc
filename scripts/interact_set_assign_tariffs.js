@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 
 async function main() {
-    const contractAddress = "0xc0F115A19107322cFBf1cDBC7ea011C19EbDB4F8"; // ✅ Replace with deployed contract address
+    const contractAddress = "0x5D42EBdBBa61412295D7b0302d6F50aC449Ddb4F"; // ✅ Replace with deployed contract address
     const userAddress = "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"; // ✅ User address
     const distributorAddress = "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E"; // ✅ Distributor who assigned the tariff
     const transmittorAddress = "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a";
@@ -29,18 +29,6 @@ async function main() {
     await txAssignTariff.wait();
     console.log("✅ Distributor Tariff assigned successfully!");
 
-    // ✅ Fetch and display the user's distributor tariff
-    console.log(`🔹 Fetching distributor tariff for user: ${userAddress}`);
-    const distributorTariffs = await contract.getUserTariffs(userAddress);
-
-    console.log(`✅ Retrieved Distributor Tariffs for ${userAddress}:`);
-    console.log(`   - Peak Tariff: ${distributorTariffs[0]} units`);
-    console.log(`   - Standard Tariff: ${distributorTariffs[1]} units`);
-    console.log(`   - Off-Peak Tariff: ${distributorTariffs[2]} units`);
-    console.log(`   - Basic Tariff: ${distributorTariffs[3]} units`);
-    console.log(`   - Assigned Distributor: ${distributorTariffs[4]}`);
-    console.log(`   - Tariff ID: ${distributorTariffs[5]}`);
-
     // ✅ Switch to Transmittor Signer
     const transmittorProvider = await hre.ethers.getSigner(transmittorAddress);
     const contractTransmittor = await hre.ethers.getContractAt("SimplePayment_v1_o_up", contractAddress, transmittorProvider);
@@ -64,18 +52,6 @@ async function main() {
     await txAssignTransmittorTariff.wait();
     console.log("✅ Transmittor Tariff assigned successfully!");
 
-    // ✅ Fetch and display the user's transmittor tariff
-    console.log(`🔹 Fetching transmittor tariff for user: ${userAddress}`);
-    const transmittorTariffs = await contractTransmittor.getUserTransmittorTariffs(userAddress);
-
-    console.log(`✅ Retrieved Transmittor Tariffs for ${userAddress}:`);
-    console.log(`   - Peak Tariff: ${transmittorTariffs[0]} units`);
-    console.log(`   - Standard Tariff: ${transmittorTariffs[1]} units`);
-    console.log(`   - Off-Peak Tariff: ${transmittorTariffs[2]} units`);
-    console.log(`   - Basic Tariff: ${transmittorTariffs[3]} units`);
-    console.log(`   - Assigned Transmittor: ${transmittorTariffs[4]}`);
-    console.log(`   - Tariff ID: ${transmittorTariffs[5]}`);
-
     // ✅ Switch to Generator Signer
     const generatorProvider = await hre.ethers.getSigner(generatorAddress);
     const contractGenerator = await hre.ethers.getContractAt("SimplePayment_v1_o_up", contractAddress, generatorProvider);
@@ -98,18 +74,6 @@ async function main() {
     let txAssignGeneratorTariff = await contractGenerator.assignGeneratorTariffToUser(userAddress, 1);
     await txAssignGeneratorTariff.wait();
     console.log("✅ Generator Tariff assigned successfully!");
-
-    // ✅ Fetch and display the user's transmittor tariff
-    console.log(`🔹 Fetching generator tariff for user: ${userAddress}`);
-    const generatorTariffs = await contractGenerator.getUserGeneratorTariffs(userAddress);
-
-    console.log(`✅ Retrieved Generator Tariffs for ${userAddress}:`);
-    console.log(`   - Peak Tariff: ${generatorTariffs[0]} units`);
-    console.log(`   - Standard Tariff: ${generatorTariffs[1]} units`);
-    console.log(`   - Off-Peak Tariff: ${generatorTariffs[2]} units`);
-    console.log(`   - Basic Tariff: ${generatorTariffs[3]} units`);
-    console.log(`   - Assigned Generator: ${generatorTariffs[4]}`);
-    console.log(`   - Tariff ID: ${generatorTariffs[5]}`);
 }
 
 main().catch((error) => {

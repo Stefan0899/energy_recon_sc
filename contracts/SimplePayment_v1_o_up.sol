@@ -17,40 +17,35 @@ contract SimplePayment_v1_o_up {
         uint32 offUsage;
     }
 
-    struct DistributorEnergyUsage {
-        uint32 dist_peakUsage;
-        uint32 dist_stdUsage;
-        uint32 dist_offUsage;
-    }
-
-    struct Distributor_User_Tariffs {
+    struct Tariffs {
         uint32 peakTariff;
         uint32 standardTariff;
         uint32 offpeakTariff;
         uint32 basicTariff;
     }
-
-    struct EnergyBill {
-        uint256 amountOwed; // Amount owed in ETH
-        bool exists; // To check if bill is set
+    struct Fees {
+        uint256 energyFee;
+        uint256 distributionFee;
+        uint256 transmissionFee;
+        uint256 providerFee;
+        uint256 totalBill;
     }
-
     // 🔹 Define the Distributor struct with tariffs mapped by ID
     struct Distributor {
         bool isRegistered;
-        mapping(uint256 => Distributor_User_Tariffs) tariffs; // Tariffs mapped by ID
+        mapping(uint256 => Tariffs) tariffs; // Tariffs mapped by ID
     }
 
     // ✅ Transmittor Struct (Similar to Distributor)
     struct Transmittor {
         bool isRegistered;
-        mapping(uint256 => Distributor_User_Tariffs) tariffs;
+        mapping(uint256 => Tariffs) tariffs;
     }
 
     //Generator
     struct Generator {
         bool isRegistered;
-        mapping(uint256 => Distributor_User_Tariffs) tariffs;
+        mapping(uint256 => Tariffs) tariffs;
     }
 
     // ✅ Mapping for Distributors & Transmittors
@@ -64,6 +59,9 @@ contract SimplePayment_v1_o_up {
     mapping(address => bool) public generatorsRegistered;
 
     // ✅ Assign Tariffs to Users
+    // Mapping to store the assigned provider for each user
+    mapping(address => address) public userProvider; // Maps users to providers
+    
     mapping(address => uint256) public userTariffID;
     mapping(address => address) public userDistributor;
 
@@ -73,14 +71,14 @@ contract SimplePayment_v1_o_up {
     mapping(address => uint256) public userGeneratorTariffID;
     mapping(address => address) public userGenerator;
 
-    mapping(address => EnergyOdometer) private userOdometers;
+    // ✅ Mapping to store end-of-month token balances
+    mapping(address => EnergyUsage) public endOfMonthBalances;
     mapping(address => EnergyUsage) private userUsage;
-    mapping(address => DistributorEnergyUsage) public userDistributorUsage;
-    mapping(address => EnergyBill) public userBills; 
-    mapping(address => EnergyBill) private energyBills;
-    mapping(address => uint256) public userE1Balances;
-    mapping(address => uint256) public userE2Balances;
-    mapping(address => uint256) public userE3Balances;
+    mapping(address => EnergyUsage) public userDistributorUsage;
+    mapping(address => EnergyOdometer) private userOdometers;
+
+    // ✅ Mapping to store user fees
+    mapping(address => Fees) public userFees;
 
     event ProviderAdded(address indexed provider);
     event ProviderRemoved(address indexed provider);
@@ -92,6 +90,7 @@ contract SimplePayment_v1_o_up {
     event TransmittorRemoved(address indexed transmittor);
     event GeneratorAdded(address indexed transmittor);
     event GeneratorRemoved(address indexed transmittor);
+    event PaymentProcessed(address indexed user);
 
     address public owner; // Contract owner (can manage providers)
 
@@ -126,7 +125,6 @@ contract SimplePayment_v1_o_up {
         require(generators[msg.sender].isRegistered, "Only registered transmittors can perform this action");
         _;
     }
-
 
     // 🔹 Function: Add a new provider (Only owner can do this)
     function addProvider(address _provider) public onlyOwner {
@@ -180,10 +178,33 @@ contract SimplePayment_v1_o_up {
         emit GeneratorRemoved(_generator);
     }
 
+    //Assign provider to user
+    function assignProviderToUser(address _user) public onlyProvider {
+        require(userProvider[_user] == address(0), "User already has a provider"); // Prevent reassignment
+        userProvider[_user] = msg.sender; // Assign the calling provider to the user
+    }
+
+        // ✅ Assign Distributor to User
+    function assignDistributorToUser(address _user) public onlyDistributor {
+        require(userDistributor[_user] == address(0), "User already has a distributor"); // Prevent reassignment
+        userDistributor[_user] = msg.sender; // Assign the calling distributor to the user
+    }
+
+    // ✅ Assign Transmittor to User
+    function assignTransmittorToUser(address _user) public onlyTransmittor {
+        require(userTransmittor[_user] == address(0), "User already has a transmittor"); // Prevent reassignment
+        userTransmittor[_user] = msg.sender; // Assign the calling transmittor to the user
+    }
+
+    // ✅ Assign Generator to User
+    function assignGeneratorToUser(address _user) public onlyGenerator {
+        require(userGenerator[_user] == address(0), "User already has a generator"); // Prevent reassignment
+        userGenerator[_user] = msg.sender; // Assign the calling generator to the user
+    }
 
     // ✅ Distributor Tariff Management
     function setTariff(uint256 _tariffID, uint32 _peakTariff, uint32 _standardTariff, uint32 _offpeakTariff, uint32 _basicTariff) public onlyDistributor {
-        distributors[msg.sender].tariffs[_tariffID] = Distributor_User_Tariffs(_peakTariff, _standardTariff, _offpeakTariff, _basicTariff);
+        distributors[msg.sender].tariffs[_tariffID] = Tariffs(_peakTariff, _standardTariff, _offpeakTariff, _basicTariff);
     }
 
     function assignTariffToUser(address _user, uint256 _tariffID) public onlyDistributor {
@@ -193,7 +214,7 @@ contract SimplePayment_v1_o_up {
 
     // ✅ Transmittor Tariff Management
     function setTransmittorTariff(uint256 _tariffID, uint32 _peakTariff, uint32 _standardTariff, uint32 _offpeakTariff, uint32 _basicTariff) public onlyTransmittor {
-        transmittors[msg.sender].tariffs[_tariffID] = Distributor_User_Tariffs(_peakTariff, _standardTariff, _offpeakTariff, _basicTariff);
+        transmittors[msg.sender].tariffs[_tariffID] = Tariffs(_peakTariff, _standardTariff, _offpeakTariff, _basicTariff);
     }
 
     function assignTransmittorTariffToUser(address _user, uint256 _tariffID) public onlyTransmittor {
@@ -203,7 +224,7 @@ contract SimplePayment_v1_o_up {
 
     // ✅ Generator Tariff Management
     function setGeneratorTariff(uint256 _tariffID, uint32 _peakTariff, uint32 _standardTariff, uint32 _offpeakTariff, uint32 _basicTariff) public onlyGenerator {
-        generators[msg.sender].tariffs[_tariffID] = Distributor_User_Tariffs(_peakTariff, _standardTariff, _offpeakTariff, _basicTariff);
+        generators[msg.sender].tariffs[_tariffID] = Tariffs(_peakTariff, _standardTariff, _offpeakTariff, _basicTariff);
     }
 
     function assignGeneratorTariffToUser(address _user, uint256 _tariffID) public onlyGenerator {
@@ -260,47 +281,48 @@ contract SimplePayment_v1_o_up {
         userUsage[_user] = EnergyUsage(peakUsage, stdUsage, offUsage);
     }
 
-    function calculateDistributorUsage(
-        uint32 peakUsage, uint32 stdUsage, uint32 offUsage,
-        uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens
-    ) internal pure returns (uint32, uint32, uint32) {
-        return (
-            e1Tokens >= peakUsage ? 0 : peakUsage - e1Tokens,
-            e2Tokens >= stdUsage ? 0 : stdUsage - e2Tokens,
-            e3Tokens >= offUsage ? 0 : offUsage - e3Tokens
-        );
+    function calculateAndStoreDistributorUsage(
+        address _user,
+        address _E1Token,
+        address _E2Token,
+        address _E3Token
+    ) internal {
+        // ✅ Fetch total energy usage from storage
+        EnergyUsage memory usage = userUsage[_user];
+
+        // ✅ Fetch token balances
+        (uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens) = getTokenBalances(_user, _E1Token, _E2Token, _E3Token);
+
+        // ✅ Store the balances in `endOfMonthBalances`
+        endOfMonthBalances[_user] = EnergyUsage(e1Tokens, e2Tokens, e3Tokens);
+
+        // ✅ Calculate distributor energy usage (subtracting token balances)
+        uint32 dist_peakUsage = e1Tokens >= usage.peakUsage ? 0 : usage.peakUsage - e1Tokens;
+        uint32 dist_stdUsage = e2Tokens >= usage.stdUsage ? 0 : usage.stdUsage - e2Tokens;
+        uint32 dist_offUsage = e3Tokens >= usage.offUsage ? 0 : usage.offUsage - e3Tokens;
+
+        // ✅ Store calculated distributor usage
+        userDistributorUsage[_user] = EnergyUsage(dist_peakUsage, dist_stdUsage, dist_offUsage);
     }
 
-    function calculateTotalBill(
-        uint32 dist_peakUsage, uint32 dist_stdUsage, uint32 dist_offUsage,
-        uint32 peakTariff, uint32 standardTariff, uint32 offpeakTariff, uint32 basicTariff
-    ) internal pure returns (uint256) {
-        return (
-            (uint256(dist_peakUsage) * peakTariff) / 100 +
-            (uint256(dist_stdUsage) * standardTariff) / 100 +
-            (uint256(dist_offUsage) * offpeakTariff) / 100 +
-            (basicTariff) / 100
-        ) * 1e18;
-    }
-
-    function calculateDistributionFee(
+    function calculateFees(
         uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens,
-        uint32 trans_peakTariff, uint32 trans_standardTariff, uint32 trans_offpeakTariff,
-        uint32 dist_peakTariff, uint32 dist_standardTariff, uint32 dist_offpeakTariff
+        uint32 upstream_peakTariff, uint32 upstream_standardTariff, uint32 upstream_offpeakTariff,
+        uint32 downstream_peakTariff, uint32 downstream_standardTariff, uint32 downstream_offpeakTariff
     ) internal pure returns (uint256) {
         // ✅ Ensure that Distributor tariffs are not greater than Transmittor tariffs
-        require(dist_peakTariff >= trans_peakTariff, "Distributor Peak Tariff must exceed Transmittor Peak Tariff");
-        require(dist_standardTariff >= trans_standardTariff, "Distributor Standard Tariff must exceed Transmittor Standard Tariff");
-        require(dist_offpeakTariff >= trans_offpeakTariff, "Distributor Off-Peak Tariff must exceed Transmittor Off-Peak Tariff");
+        require(downstream_peakTariff >= upstream_peakTariff, "Downstream Peak Tariff must exceed Upstream Peak Tariff");
+        require(downstream_standardTariff >= upstream_standardTariff, "Downstream Standard Tariff must exceed Upstream Standard Tariff");
+        require(downstream_offpeakTariff >= upstream_offpeakTariff, "Downstream Off-Peak Tariff must exceed Upstream Off-Peak Tariff");
 
         uint256 peakFee;
         uint256 standardFee;
         uint256 offpeakFee;
 
         // ✅ Convert everything to uint256 before doing math
-        uint256 peakTariffDiff = uint256(dist_peakTariff) - uint256(trans_peakTariff);
-        uint256 standardTariffDiff = uint256(dist_standardTariff) - uint256(trans_standardTariff);
-        uint256 offpeakTariffDiff = uint256(dist_offpeakTariff) - uint256(trans_offpeakTariff);
+        uint256 peakTariffDiff = uint256(downstream_peakTariff) - uint256(upstream_peakTariff);
+        uint256 standardTariffDiff = uint256(downstream_standardTariff) - uint256(upstream_standardTariff);
+        uint256 offpeakTariffDiff = uint256(downstream_offpeakTariff) - uint256(upstream_offpeakTariff);
 
         uint256 e1 = uint256(e1Tokens);
         uint256 e2 = uint256(e2Tokens);
@@ -322,102 +344,6 @@ contract SimplePayment_v1_o_up {
         return (totalFee * 1e16); // ✅ Safe conversion to ETH format
     }
 
-    function calculateTransmissionFee(
-        uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens,
-        uint32 trans_peakTariff, uint32 trans_standardTariff, uint32 trans_offpeakTariff,
-        uint32 gen_peakTariff, uint32 gen_standardTariff, uint32 gen_offpeakTariff
-    ) internal pure returns (uint256) {
-        // ✅ Ensure that Distributor tariffs are not greater than Transmittor tariffs
-        require(trans_peakTariff >= gen_peakTariff, "Transmission Peak Tariff must exceed Generator Peak Tariff");
-        require(trans_standardTariff >= gen_standardTariff, "Transmission Standard Tariff must exceed Generator Standard Tariff");
-        require(trans_offpeakTariff >= gen_offpeakTariff, "Transmission Off-Peak Tariff must exceed Generator Off-Peak Tariff");
-
-        uint256 peakFee;
-        uint256 standardFee;
-        uint256 offpeakFee;
-
-        // ✅ Convert everything to uint256 before doing math
-        uint256 peakTariffDiff = uint256(trans_peakTariff) - uint256(gen_peakTariff);
-        uint256 standardTariffDiff = uint256(trans_standardTariff) - uint256(gen_standardTariff);
-        uint256 offpeakTariffDiff = uint256(trans_offpeakTariff) - uint256(gen_offpeakTariff);
-
-        uint256 e1 = uint256(e1Tokens);
-        uint256 e2 = uint256(e2Tokens);
-        uint256 e3 = uint256(e3Tokens);
-
-        // ✅ Cap energy tokens to prevent excessive multiplication
-        require(e1 <= 1e6 && e2 <= 1e6 && e3 <= 1e6, "Token balances too large"); 
-
-        // ✅ Use `unchecked` to prevent overflow reverts when safe
-        unchecked {
-            peakFee = (peakTariffDiff * e1)/100;
-            standardFee = (standardTariffDiff * e2)/100;
-            offpeakFee = (offpeakTariffDiff * e3)/100;
-        }
-
-        // ✅ Perform division before multiplying by `1e18` to prevent large numbers
-        uint256 totalFee = (peakFee + standardFee + offpeakFee);
-    
-        return (totalFee * 1e18); // ✅ Safe conversion to ETH format
-    }
-
-    // ✅ Provider assigns a bill based on stored total usage
-    function updateOdometersAndCalculateBill(
-        address _user,
-        address _E1Token,
-        address _E2Token,
-        address _E3Token,
-        uint32 _newPeakODO,
-        uint32 _newStdODO,
-        uint32 _newOffODO,
-        address _distributor
-    ) public onlyProvider {
-
-        // ✅ Fetch assigned tariff ID
-        uint256 tariffID = userTariffID[_user];
-
-        // ✅ Fetch the tariff from the distributor's book
-        Distributor_User_Tariffs memory tariffs = distributors[_distributor].tariffs[tariffID];
-
-        require(tariffs.peakTariff > 0, "Tariff not set for this user under distributor");
-
-        //calculateTotalUsage
-        calculateTotalUsage(_user, _newPeakODO, _newStdODO, _newOffODO);
-
-        // ✅ Fetch total usage from storage (already calculated in calculateTotalUsage)
-        EnergyUsage memory usage = userUsage[_user];
-
-        // ✅ Fetch token balances
-        (uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens) = getTokenBalances(_user, _E1Token, _E2Token, _E3Token);
-
-        // ✅ Store the user's token balances
-        userE1Balances[_user] = e1Tokens;
-        userE2Balances[_user] = e2Tokens;
-        userE3Balances[_user] = e3Tokens;
-
-        // ✅ Calculate distributor energy usage (subtracting token balances)
-        (uint32 dist_peakUsage, uint32 dist_stdUsage, uint32 dist_offUsage) = calculateDistributorUsage(
-            usage.peakUsage, usage.stdUsage, usage.offUsage, e1Tokens, e2Tokens, e3Tokens
-        );
-
-        // ✅ Store calculated distributor usage
-        userDistributorUsage[_user] = DistributorEnergyUsage(dist_peakUsage, dist_stdUsage, dist_offUsage);
-
-        uint256 totalPayment = calculateTotalBill(
-            dist_peakUsage, 
-            dist_stdUsage, 
-            dist_offUsage, 
-            tariffs.peakTariff, 
-            tariffs.standardTariff, 
-            tariffs.offpeakTariff, 
-            tariffs.basicTariff
-        );
-
-        // ✅ Store the bill in the correct mapping
-        energyBills[_user] = EnergyBill(totalPayment, true);
-        emit BillGenerated(_user, totalPayment);
-    }
-
     // ✅ Provider assigns a bill based on stored total usage
     function eomRecon(
         address _user,
@@ -426,35 +352,23 @@ contract SimplePayment_v1_o_up {
         address _E3Token,
         uint32 _newPeakODO,
         uint32 _newStdODO,
-        uint32 _newOffODO,
-        address _distributor
+        uint32 _newOffODO
     ) public onlyProvider {
+        //Stakeholders registered
 
-        //calculateTotalUsage, and updates storage on usage and ODO
+        //Tariffs set
+
+        //Calculate Total Usage, Updates storgae of TotalUsage and ODOS
         calculateTotalUsage(_user, _newPeakODO, _newStdODO, _newOffODO);
 
-        // ✅ Fetch token balances
-        (uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens) = getTokenBalances(_user, _E1Token, _E2Token, _E3Token);
+        //Calculate Distributor Usage, Updates storage on distributor usage and EOM token balances
+        calculateAndStoreDistributorUsage(_user, _E1Token, _E2Token, _E3Token);
 
-        // ✅ Store the user's token balances
-        userE1Balances[_user] = e1Tokens;
-        userE2Balances[_user] = e2Tokens;
-        userE3Balances[_user] = e3Tokens;
-
-        // ✅ Calculate distributor energy usage (subtracting token balances)
-        (uint32 dist_peakUsage, uint32 dist_stdUsage, uint32 dist_offUsage) = calculateDistributorUsage(
-            usage.peakUsage, usage.stdUsage, usage.offUsage, e1Tokens, e2Tokens, e3Tokens
-        );
-
-        // ✅ Store calculated distributor usage
-        userDistributorUsage[_user] = DistributorEnergyUsage(dist_peakUsage, dist_stdUsage, dist_offUsage);
-
-        // ✅ Store the bill in the correct mapping
-        energyBills[_user] = EnergyBill(totalPayment, true);
-        emit BillGenerated(_user, totalPayment);
+        //Calculate Energy fee, distribution fee, and transmission fee, and store these values
+        storeFees(_user);
     }
 
-    function getTransmissionFee(address _user) public view returns (uint256 energyFee, uint256 distributionFee, uint256 transmissionFee) {
+    function storeFees(address _user) internal {
         require(userTariffID[_user] > 0, "No distributor tariff assigned to this user");
         require(userTransmittorTariffID[_user] > 0, "No transmittor tariff assigned to this user");
         require(userGeneratorTariffID[_user] > 0, "No generator tariff assigned to this user");
@@ -471,185 +385,127 @@ contract SimplePayment_v1_o_up {
         uint256 transmittorTariffID = userTransmittorTariffID[_user];
         uint256 generatorTariffID = userGeneratorTariffID[_user];
 
-        Distributor_User_Tariffs memory distributorTariff = distributors[distributorAddress].tariffs[distributorTariffID];
-        Distributor_User_Tariffs memory transmittorTariff = transmittors[transmittorAddress].tariffs[transmittorTariffID];
-        Distributor_User_Tariffs memory generatorTariff = generators[generatorAddress].tariffs[generatorTariffID];
+        Tariffs memory distributorTariff = distributors[distributorAddress].tariffs[distributorTariffID];
+        Tariffs memory transmittorTariff = transmittors[transmittorAddress].tariffs[transmittorTariffID];
+        Tariffs memory generatorTariff = generators[generatorAddress].tariffs[generatorTariffID];
 
-        // ✅ Fetch energy token balances (instead of total energy usage)
-        uint32 e1Balance = uint32(userE1Balances[_user]);
-        uint32 e2Balance = uint32(userE2Balances[_user]);
-        uint32 e3Balance = uint32(userE3Balances[_user]);
-
-        // ✅ Fetch total energy usage for transmission fee calculation
+        //✅ Fetch stored end-of-month token balances like `userUsage[_user]`
+        EnergyUsage memory eomBalances = endOfMonthBalances[_user];
         EnergyUsage memory totalUsage = userUsage[_user];
+        EnergyUsage memory distUsage = userDistributorUsage[_user];
 
-        // ✅ Calculate distributor energy usage (subtracting token balances)
-        (uint32 dist_peakUsage, uint32 dist_stdUsage, uint32 dist_offUsage) = calculateDistributorUsage(
-            totalUsage.peakUsage, totalUsage.stdUsage, totalUsage.offUsage, e1Balance, e2Balance, e3Balance
-        );
-
-        energyFee = calculateDistributionFee(
-            dist_peakUsage, dist_stdUsage, dist_offUsage,  
+        uint256 energyFee = calculateFees(
+            distUsage.peakUsage, distUsage.stdUsage, distUsage.offUsage,  
             0, 0, 0,
             distributorTariff.peakTariff, distributorTariff.standardTariff, distributorTariff.offpeakTariff
         );
 
-        distributionFee = calculateDistributionFee(
-            e1Balance, e2Balance, e3Balance,  
+        uint256 distributionFee = calculateFees(
+            eomBalances.peakUsage, eomBalances.stdUsage, eomBalances.offUsage,  
             transmittorTariff.peakTariff, transmittorTariff.standardTariff, transmittorTariff.offpeakTariff,
             distributorTariff.peakTariff, distributorTariff.standardTariff, distributorTariff.offpeakTariff
         );
 
-        transmissionFee = calculateDistributionFee(
+        uint256 transmissionFee = calculateFees(
             totalUsage.peakUsage, totalUsage.stdUsage, totalUsage.offUsage,  
             generatorTariff.peakTariff, generatorTariff.standardTariff, generatorTariff.offpeakTariff,
             transmittorTariff.peakTariff, transmittorTariff.standardTariff, transmittorTariff.offpeakTariff
         );
 
-        return (energyFee, distributionFee, transmissionFee);
+        // ✅ Calculate `providerFee` as 0.5% of the total fee amount
+        uint256 providerFee = ((energyFee + distributionFee + transmissionFee) *5 )/ 1000; // 0.5% of total fees
+        
+        //Total bill
+        uint256 totalBill = energyFee + distributionFee + transmissionFee + providerFee;
+
+        userFees[_user] = Fees(energyFee, distributionFee, transmissionFee, providerFee, totalBill);
     }
 
+    function viewAllUserData(address _user) 
+        public 
+        view 
+        returns (
+            uint32 peakUsage, uint32 stdUsage, uint32 offUsage,  // Total Usage
+            uint32 dist_peakUsage, uint32 dist_stdUsage, uint32 dist_offUsage, // Distributor Usage
+            uint32 e1Balance, uint32 e2Balance, uint32 e3Balance, // Token Balances
+            uint256 energyFee, uint256 distributionFee, uint256 transmissionFee, uint256 providerFee, uint256 totalBill, // Fees
+            uint32 distributorPeakTariff, uint32 distributorStandardTariff, uint32 distributorOffpeakTariff, uint32 distributorBasicTariff, // Distributor Tariffs
+            uint32 transmittorPeakTariff, uint32 transmittorStandardTariff, uint32 transmittorOffpeakTariff, uint32 transmittorBasicTariff, // Transmittor Tariffs
+            uint32 generatorPeakTariff, uint32 generatorStandardTariff, uint32 generatorOffpeakTariff, uint32 generatorBasicTariff // Generator Tariffs
+        ) 
+    {
+        // ✅ Fetch stored Total Energy Usage
+        EnergyUsage memory totalUsage = userUsage[_user];
 
-    function getDistributionFee(address _user) public view returns (uint256 totalFee) {
-        require(userTariffID[_user] > 0, "No distributor tariff assigned to this user");
-        require(userTransmittorTariffID[_user] > 0, "No transmittor tariff assigned to this user");
+        // ✅ Fetch stored Distributor Energy Usage
+        EnergyUsage memory distUsage = userDistributorUsage[_user];
 
+        // ✅ Fetch stored End-of-Month Token Balances
+        EnergyUsage memory eomBalances = endOfMonthBalances[_user];
+
+        // ✅ Fetch stored Fees
+        Fees memory fees = userFees[_user];
+
+        // ✅ Fetch assigned Distributor, Transmittor, and Generator addresses
         address distributorAddress = userDistributor[_user];
         address transmittorAddress = userTransmittor[_user];
+        address generatorAddress = userGenerator[_user];
 
-        require(distributors[distributorAddress].isRegistered, "Distributor is not registered");
-        require(transmittors[transmittorAddress].isRegistered, "Transmittor is not registered");
-
+        // ✅ Fetch assigned Tariff IDs
         uint256 distributorTariffID = userTariffID[_user];
         uint256 transmittorTariffID = userTransmittorTariffID[_user];
+        uint256 generatorTariffID = userGeneratorTariffID[_user];
 
-        Distributor_User_Tariffs memory distributorTariff = distributors[distributorAddress].tariffs[distributorTariffID];
-        Distributor_User_Tariffs memory transmittorTariff = transmittors[transmittorAddress].tariffs[transmittorTariffID];
-
-        // ✅ Fetch energy token balances (instead of total energy usage)
-        uint32 e1Balance = uint32(userE1Balances[_user]);
-        uint32 e2Balance = uint32(userE2Balances[_user]);
-        uint32 e3Balance = uint32(userE3Balances[_user]);
-
-        return calculateDistributionFee(
-            e1Balance, e2Balance, e3Balance,  // ✅ Use energy token balances
-            transmittorTariff.peakTariff, transmittorTariff.standardTariff, transmittorTariff.offpeakTariff,
-            distributorTariff.peakTariff, distributorTariff.standardTariff, distributorTariff.offpeakTariff
-        );
-    }
-
-    // 🔹 Get current ODO readings
-    function getOdometers(address _user) public view returns (uint32 peakODO, uint32 stdODO, uint32 offODO) {
-        EnergyOdometer memory odo = userOdometers[_user];
-        return (odo.peakODO, odo.stdODO, odo.offODO);
-    }
-
-    // 🔹 Get total energy usage stored
-    function getUsage(address _user) public view returns (uint32 peakUsage, uint32 stdUsage, uint32 offUsage) {
-        EnergyUsage memory usage = userUsage[_user];
-        return (usage.peakUsage, usage.stdUsage, usage.offUsage);
-    }
-
-    // 🔹 Get distributor usage stored (after deducting tokens)
-    function getDistributorUsage(address _user) public view returns (uint32 dist_peakUsage, uint32 dist_stdUsage, uint32 dist_offUsage) {
-        DistributorEnergyUsage memory usage = userDistributorUsage[_user];
-        return (usage.dist_peakUsage, usage.dist_stdUsage, usage.dist_offUsage);
-    }
-
-    function getTotalBill(address _user) public view returns (uint256) {
-        EnergyBill memory bill = energyBills[_user]; // ✅ Fetch from the correct mapping
-        return bill.exists ? bill.amountOwed : 0; // ✅ Returns the correct total bill
-    }
-
-    // 🔹 Get stored EOM token balances (E1, E2, and E3)
-    function getEOMTokenBalance(address _user) public view returns (uint256 e1Balance, uint256 e2Balance, uint256 e3Balance) {
-        return (userE1Balances[_user], userE2Balances[_user], userE3Balances[_user]);
-    }
-
-    function getUserTariffs(address _user) public view returns (uint32, uint32, uint32, uint32, address, uint256) {
-        // ✅ Ensure the user has been assigned a tariff
-        require(userTariffID[_user] > 0, "No tariff assigned to this user");
-
-        // ✅ Ensure the user has an assigned distributor
-        require(userDistributor[_user] != address(0), "No distributor assigned to this user");
-        address distributorAddress = userDistributor[_user];
-
-        // ✅ Ensure the distributor exists
-        require(distributors[distributorAddress].isRegistered, "Distributor is not registered");
-
-        // ✅ Fetch assigned tariff ID
-        uint256 tariffID = userTariffID[_user];
-
-        // ✅ Fetch tariff details from distributor's tariff book
-        Distributor storage distributor = distributors[distributorAddress];
-        Distributor_User_Tariffs memory tariffs = distributor.tariffs[tariffID];
-
-        require(tariffs.peakTariff > 0, "Tariff ID not found under distributor");
+        // ✅ Fetch stored tariffs
+        Tariffs memory distributorTariff = distributors[distributorAddress].tariffs[distributorTariffID];
+        Tariffs memory transmittorTariff = transmittors[transmittorAddress].tariffs[transmittorTariffID];
+        Tariffs memory generatorTariff = generators[generatorAddress].tariffs[generatorTariffID];
 
         return (
-            tariffs.peakTariff,
-            tariffs.standardTariff,
-            tariffs.offpeakTariff,
-            tariffs.basicTariff,
-            distributorAddress, // ✅ Return distributor address
-            tariffID // ✅ Return assigned tariff ID
+            totalUsage.peakUsage, totalUsage.stdUsage, totalUsage.offUsage, // Total Usage
+            distUsage.peakUsage, distUsage.stdUsage, distUsage.offUsage, // Distributor Usage
+            eomBalances.peakUsage, eomBalances.stdUsage, eomBalances.offUsage, // Token Balances
+            fees.energyFee, fees.distributionFee, fees.transmissionFee, fees.providerFee, fees.totalBill, // Fees
+            distributorTariff.peakTariff, distributorTariff.standardTariff, distributorTariff.offpeakTariff, distributorTariff.basicTariff, // Distributor Tariffs
+            transmittorTariff.peakTariff, transmittorTariff.standardTariff, transmittorTariff.offpeakTariff, transmittorTariff.basicTariff, // Transmittor Tariffs
+            generatorTariff.peakTariff, generatorTariff.standardTariff, generatorTariff.offpeakTariff, generatorTariff.basicTariff // Generator Tariffs
         );
     }
 
-    function getUserTransmittorTariffs(address _user) public view returns (uint32, uint32, uint32, uint32, address, uint256) {
-        require(userTransmittorTariffID[_user] > 0, "No transmittor tariff assigned to this user");
-        require(userTransmittor[_user] != address(0), "No transmittor assigned to this user");
+    function payEnergyFees() public payable {
+        require(userProvider[msg.sender] != address(0), "No provider assigned to this user");
+        require(userDistributor[msg.sender] != address(0), "No distributor assigned to this user");
+        require(userTransmittor[msg.sender] != address(0), "No transmittor assigned to this user");
 
-        address transmittorAddress = userTransmittor[_user];
-        uint256 tariffID = userTransmittorTariffID[_user];
+        address payable provider = payable(userProvider[msg.sender]);
+        address payable distributor = payable(userDistributor[msg.sender]);
+        address payable transmittor = payable(userTransmittor[msg.sender]);
 
-        require(transmittors[transmittorAddress].isRegistered, "Transmittor is not registered");
+        Fees memory userFee = userFees[msg.sender];
 
-        Distributor_User_Tariffs memory tariffs = transmittors[transmittorAddress].tariffs[tariffID];
-        require(tariffs.peakTariff > 0, "Tariff ID not found under transmittor");
+        require(userFee.totalBill > 0, "No outstanding bill for this user");
 
-        return (
-            tariffs.peakTariff,
-            tariffs.standardTariff,
-            tariffs.offpeakTariff,
-            tariffs.basicTariff,
-            transmittorAddress, // ✅ Return transmittor address
-            tariffID // ✅ Return assigned tariff ID
-        );
+        uint256 energyAndDistributionFee = ((userFee.energyFee + userFee.distributionFee));
+        uint256 transmissionFee = (userFee.transmissionFee);
+        uint256 providerFee = (userFee.providerFee);
+        uint256 totalBillETH = (userFee.totalBill);
+
+        console.log("Expected Total Bill (wei):", totalBillETH);
+        console.log("Energy + Distribution Fee (wei):", energyAndDistributionFee);
+        console.log("Transmission Fee (wei):", transmissionFee);
+        console.log("Provider Fee (wei):", providerFee);
+        console.log("msg.value (wei):", msg.value);
+
+        require(msg.value >= totalBillETH, "Insufficient ETH sent");
+
+        // ✅ Perform transfers
+        distributor.transfer(energyAndDistributionFee);
+        transmittor.transfer(transmissionFee);
+        provider.transfer(providerFee);
+
+        delete userFees[msg.sender];
+
+        console.log("Payment Successful!");
     }
 
-    function getUserGeneratorTariffs(address _user) public view returns (uint32, uint32, uint32, uint32, address, uint256) {
-        require(userGeneratorTariffID[_user] > 0, "No generator tariff assigned to this user");
-        require(userGenerator[_user] != address(0), "No generator assigned to this user");
-
-        address generatorAddress = userGenerator[_user];
-        uint256 tariffID = userGeneratorTariffID[_user];
-
-        require(generators[generatorAddress].isRegistered, "Generator is not registered");
-
-        Distributor_User_Tariffs memory tariffs = generators[generatorAddress].tariffs[tariffID];
-        require(tariffs.peakTariff > 0, "Tariff ID not found under transmittor");
-
-        return (
-            tariffs.peakTariff,
-            tariffs.standardTariff,
-            tariffs.offpeakTariff,
-            tariffs.basicTariff,
-            generatorAddress, // ✅ Return transmittor address
-            tariffID // ✅ Return assigned tariff ID
-        );
-    }
-
-    // 🔹 Function: User pays their bill, ETH is sent to the provider
-    function payBill(address _provider) public payable {
-        require(energyBills[msg.sender].exists, "No bill found for this user");
-        require(providers[_provider], "Invalid provider address");
-        
-        uint256 amountOwed = energyBills[msg.sender].amountOwed;
-        require(msg.value >= amountOwed, "Insufficient ETH sent");
-
-        energyBills[msg.sender].exists = false; // Clear bill after payment
-        payable(_provider).transfer(amountOwed); // Transfer ETH to the provider
-        emit PaymentProcessed(msg.sender, amountOwed, _provider);
-    }
 }
