@@ -14,9 +14,9 @@ async function main() {
     const factoryAddress = await factory.getAddress();
 
     console.log("FactoryAddress:", factoryAddress);
-    console.log("E1 Token deployed at:", await factory.tokenE1());
-    console.log("E2 Token deployed at:", await factory.tokenE2());
-    console.log("E3 Token deployed at:", await factory.tokenE3());
+    console.log("Ep Token deployed at:", await factory.tokenEp());
+    console.log("Es Token deployed at:", await factory.tokenEs());
+    console.log("Eo Token deployed at:", await factory.tokenEo());
 }
 
 main().catch((error) => {

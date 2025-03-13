@@ -2,15 +2,15 @@
 const hre = require("hardhat");
 
 async function main() {
-    const contractAddress = "0x2Dd78Fd9B8F40659Af32eF98555B8b31bC97A351";  // ✅ Replace with actual contract address
-    const owner = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";  // ✅ Replace with the owner's wallet address
+    const contractAddress = "0xE43Ef8DCA60e3fa24Af647D32DDf8BfB041d69aa";  // ✅ Replace with actual contract address
+    const owner = "0xba539dF3129699C57148AF13E1027e7673bcC36C";  // ✅ Replace with the owner's wallet address
 
     // ✅ Define new provider, distributor, and transmittor addresses
-    const newProvider = "0xdD2FD4581271e230360230F9337D5c0430Bf44C0";  // ✅ Replace with the new provider's address
-    const newDistributor = "0xbDA5747bFD65F08deb54cb465eB87D40e51B197E";  // ✅ Replace with the new distributor's address
-    const newTransmittor = "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a";  // ✅ Replace with the new transmittor's address
-    const newGenerator = "0x90F79bf6EB2c4f870365E785982E1f101E93b906";
-    const userAddress = "0x71bE63f3384f5fb98995898A86B02Fb2426c5788";
+    const newProvider = "0x9DF18672f31A9b48b2C34405ce6EfE80A95514f8";  // ✅ Replace with the new provider's address
+    const newDistributor = "0x57D5d45C25C7185008aE9E8Aa0C951092AF64588";  // ✅ Replace with the new distributor's address
+    const newTransmittor = "0x21b34Aa299e73a11AB23895478eee6df6EBD188D";  // ✅ Replace with the new transmittor's address
+    const newGenerator = "0x6a32eD244A0D3C8e124033e74e9235D160605CF4";
+    const userAddress = "0x393d98362B7C09118a3CD4C179c6322C6F9456A3";
 
     // ✅ Get deployed contract instance
     const signer = await hre.ethers.getSigner(owner); // Ensure the owner calls this function
@@ -40,25 +40,6 @@ async function main() {
     await tx.wait();
     console.log(`✅ Generator added successfully: ${newGenerator}`);
 
-    // ✅ Assign Provider
-    tx = await contract.connect(await hre.ethers.getSigner(newProvider)).assignProviderToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Provider assigned: ${newProvider}`);
-
-    // ✅ Assign Distributor
-    tx = await contract.connect(await hre.ethers.getSigner(newDistributor)).assignDistributorToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Distributor assigned: ${newDistributor}`);
-
-    // ✅ Assign Transmittor
-    tx = await contract.connect(await hre.ethers.getSigner(newTransmittor)).assignTransmittorToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Transmittor assigned: ${newTransmittor}`);
-
-    // ✅ Assign Generator
-    tx = await contract.connect(await hre.ethers.getSigner(newGenerator)).assignGeneratorToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Generator assigned: ${newGenerator}`);
 }
 
 // Execute the script

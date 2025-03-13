@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-    const factoryAddress = "0x045857BDEAE7C1c7252d611eB24eB55564198b4C"; // Replace with actual deployed factory address
-    const newContractAddress = "0x2Dd78Fd9B8F40659Af32eF98555B8b31bC97A351"; // Replace with the contract that needs to call clawback()
+    const factoryAddress = "0x15381B00823186EAA183a0395aF91CeF90aB5905"; // Replace with actual deployed factory address
+    const newContractAddress = "0xB16103De3B577C8384157A7B15660bA97469DBA8"; // Replace with the contract that needs to call clawback()
 
     // Get the deployed EnergyTokenFactory contract
     const factory = await hre.ethers.getContractAt("EnergyTokenFactory", factoryAddress);

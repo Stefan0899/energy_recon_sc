@@ -295,6 +295,7 @@ contract SimplePayment_v1_o_up {
         // ✅ Fetch token balances
         (uint32 e1Tokens, uint32 e2Tokens, uint32 e3Tokens) = getTokenBalances(_user, _E1Token, _E2Token, _E3Token);
 
+
         // ✅ Store the balances in `endOfMonthBalances`
         endOfMonthBalances[_user] = EnergyUsage(e1Tokens, e2Tokens, e3Tokens);
 

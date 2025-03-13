@@ -8,65 +8,65 @@ contract EnergyTokenFactory is Ownable {
     address public recoveryAddress;
 
     // Declare three tokens
-    EnergyToken public tokenE1;
-    EnergyToken public tokenE2;
-    EnergyToken public tokenE3;
+    EnergyToken public tokenEp;
+    EnergyToken public tokenEs;
+    EnergyToken public tokenEo;
 
     constructor(address _recoveryAddress) Ownable(msg.sender) {
         recoveryAddress = _recoveryAddress;
 
         // Deploy three EnergyTokens
-        tokenE1 = new EnergyToken("Energy Token 1", "E1", recoveryAddress);
-        tokenE2 = new EnergyToken("Energy Token 2", "E2", recoveryAddress);
-        tokenE3 = new EnergyToken("Energy Token 3", "E3", recoveryAddress);
+        tokenEp = new EnergyToken("Peak Energy Token", "Ep", recoveryAddress);
+        tokenEs = new EnergyToken("Std Energy Token", "Es", recoveryAddress);
+        tokenEo = new EnergyToken("Off-peak Energy Token", "Eo", recoveryAddress);
     }
 
     // ✅ Separate function to whitelist this contract AFTER deployment
     function initializeWhitelist() public onlyOwner {
-        tokenE1.addAllowedContract(address(this));
-        tokenE2.addAllowedContract(address(this));
-        tokenE3.addAllowedContract(address(this));
+        tokenEp.addAllowedContract(address(this));
+        tokenEs.addAllowedContract(address(this));
+        tokenEo.addAllowedContract(address(this));
     }
 
     // ✅ Function to add another contract to the whitelist
     function addAuthorizedContract(address newContract) public onlyOwner {
         require(newContract.code.length > 0, "Not a contract"); // Ensures only contracts are added
-        tokenE1.addAllowedContract(newContract);
-        tokenE2.addAllowedContract(newContract);
-        tokenE3.addAllowedContract(newContract);
+        tokenEp.addAllowedContract(newContract);
+        tokenEs.addAllowedContract(newContract);
+        tokenEo.addAllowedContract(newContract);
     }
 
     // ✅ Function to remove a contract from the whitelist
     function removeAuthorizedContract(address contractAddress) public onlyOwner {
-        tokenE1.removeAllowedContract(contractAddress);
-        tokenE2.removeAllowedContract(contractAddress);
-        tokenE3.removeAllowedContract(contractAddress);
+        tokenEp.removeAllowedContract(contractAddress);
+        tokenEs.removeAllowedContract(contractAddress);
+        tokenEo.removeAllowedContract(contractAddress);
     }
 
     // ✅ Mint functions (unchanged)
-    function mintE1(address to, uint256 amount) public onlyOwner {
-        tokenE1.mint(to, amount);
+    function mintEp(address to, uint256 amount) public onlyOwner {
+        tokenEp.mint(to, amount);
     }
 
-    function mintE2(address to, uint256 amount) public onlyOwner {
-        tokenE2.mint(to, amount);
+    function mintEs(address to, uint256 amount) public onlyOwner {
+        tokenEs.mint(to, amount);
     }
 
-    function mintE3(address to, uint256 amount) public onlyOwner {
-        tokenE3.mint(to, amount);
+    function mintEo(address to, uint256 amount) public onlyOwner {
+        tokenEo.mint(to, amount);
     }
 
     // ✅ Clawback functions now allow whitelisted contracts to call them
-    function clawbackE1(address from, uint256 amount) public {
-        tokenE1.clawback(from, amount);
+    function clawbackEp(address from, uint256 amount) public {
+        tokenEp.clawback(from, amount);
     }
 
-    function clawbackE2(address from, uint256 amount) public {
-        tokenE2.clawback(from, amount);
+    function clawbackEs(address from, uint256 amount) public {
+        tokenEs.clawback(from, amount);
     }
 
-    function clawbackE3(address from, uint256 amount) public {
-        tokenE3.clawback(from, amount);
+    function clawbackEo(address from, uint256 amount) public {
+        tokenEo.clawback(from, amount);
     }
 }
 

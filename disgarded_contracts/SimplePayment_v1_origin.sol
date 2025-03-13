@@ -206,7 +206,7 @@ contract SimplePayment_v1 {
         return (userE1Balances[_user], userE2Balances[_user], userE3Balances[_user]);
     }
 
-    function getUserTariffs(address _user) public view returns (uint32, uint32, uint32, uint32) {
+    function getUserTariffs(address _user, address ) public view returns (uint32, uint32, uint32, uint32) {
         Distributor_User_Tariffs memory tariffs = userTariffs[_user];
         return (tariffs.peakTariff, tariffs.standardTariff, tariffs.offpeakTariff, tariffs.basicTariff);
     }

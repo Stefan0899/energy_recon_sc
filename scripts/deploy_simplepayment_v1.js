@@ -4,7 +4,7 @@ async function main() {
     const [deployer] = await hre.ethers.getSigners();
     console.log("Deployer Address:", deployer.address);
 
-    const SimplePayment_v1 = await hre.ethers.getContractFactory("SimplePayment_v1_o_up");
+    const SimplePayment_v1 = await hre.ethers.getContractFactory("Energy_Recon");
     const contract = await SimplePayment_v1.deploy();
 
     await contract.waitForDeployment();
