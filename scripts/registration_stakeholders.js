@@ -12,14 +12,8 @@ async function main() {
     const transmittorWallet = new hre.ethers.Wallet(process.env.TRANSMITTOR_PRIVATE_KEY, provider);
     const generatorWallet = new hre.ethers.Wallet(process.env.GENERATOR_PRIVATE_KEY, provider);
 
-    const userAddress = "0x797e3185F817Bd87CdEb14874786b18dbEa93C32"; // Replace with actual user
-
     // Connect each wallet to the contract
     const ownerContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, ownerWallet);
-    const providerContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, providerWallet);
-    const distributorContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, distributorWallet);
-    const transmittorContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, transmittorWallet);
-    const generatorContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, generatorWallet);
 
     // ✅ Add Provider (Signed by Owner)
     console.log(`🔹 Adding new provider: ${providerWallet.address}`);
@@ -45,29 +39,6 @@ async function main() {
     await tx.wait();
     console.log(`✅ Generator added successfully: ${generatorWallet.address}`);
 
-    // ✅ Assign Provider (Signed by Provider)
-    console.log(`🔹 Assigning provider: ${providerWallet.address}`);
-    tx = await ownerContract.assignProviderToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Provider assigned: ${providerWallet.address}`);
-
-    // ✅ Assign Distributor (Signed by Distributor)
-    console.log(`🔹 Assigning distributor: ${distributorWallet.address}`);
-    tx = await ownerContract.assignDistributorToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Distributor assigned: ${distributorWallet.address}`);
-
-    // ✅ Assign Transmittor (Signed by Transmittor)
-    console.log(`🔹 Assigning transmittor: ${transmittorWallet.address}`);
-    tx = await ownerContract.assignTransmittorToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Transmittor assigned: ${transmittorWallet.address}`);
-
-    // ✅ Assign Generator (Signed by Generator)
-    console.log(`🔹 Assigning generator: ${generatorWallet.address}`);
-    tx = await ownerContract.assignGeneratorToUser(userAddress);
-    await tx.wait();
-    console.log(`✅ Generator assigned: ${generatorWallet.address}`);
 }
 
 // Execute the script

@@ -16,10 +16,30 @@ async function main() {
 
     // Connect each wallet to the contract
     const ownerContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, ownerWallet);
-    // const providerContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, providerWallet);
-    // const distributorContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, distributorWallet);
-    // const transmittorContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, transmittorWallet);
-    // const generatorContract = await hre.ethers.getContractAt("Energy_Recon", contractAddress, generatorWallet);
+
+    // ✅ Add Provider (Signed by Owner)
+    console.log(`🔹 Adding new provider: ${providerWallet.address}`);
+    let tx = await ownerContract.addProvider(providerWallet.address);
+    await tx.wait();
+    console.log(`✅ Provider added successfully: ${providerWallet.address}`);
+
+    // ✅ Add Distributor (Signed by Owner)
+    console.log(`🔹 Adding new distributor: ${distributorWallet.address}`);
+    tx = await ownerContract.addDistributor(distributorWallet.address);
+    await tx.wait();
+    console.log(`✅ Distributor added successfully: ${distributorWallet.address}`);
+
+    // ✅ Add Transmittor (Signed by Owner)
+    console.log(`🔹 Adding new transmittor: ${transmittorWallet.address}`);
+    tx = await ownerContract.addTransmittor(transmittorWallet.address);
+    await tx.wait();
+    console.log(`✅ Transmittor added successfully: ${transmittorWallet.address}`);
+
+    // ✅ Add Generator (Signed by Owner)
+    console.log(`🔹 Adding new generator: ${generatorWallet.address}`);
+    tx = await ownerContract.addGenerator(generatorWallet.address);
+    await tx.wait();
+    console.log(`✅ Generator added successfully: ${generatorWallet.address}`);
 
     // ✅ Assign Provider (Signed by Provider)
     console.log(`🔹 Assigning provider: ${providerWallet.address}`);

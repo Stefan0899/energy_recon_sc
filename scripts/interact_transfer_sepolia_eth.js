@@ -1,9 +1,9 @@
 const hre = require("hardhat");
 
 async function main() {
-    const sender = "0x57D5d45C25C7185008aE9E8Aa0C951092AF64588"; // Your MetaMask sender address
-    const recipient = "0xba539dF3129699C57148AF13E1027e7673bcC36C"; // Replace with recipient's wallet address
-    const amount = hre.ethers.parseEther("2"); // Amount of ETH to send (0.1 ETH)
+    const sender = "0xba539dF3129699C57148AF13E1027e7673bcC36C"; // Your MetaMask sender address
+    const recipient = "0x797e3185F817Bd87CdEb14874786b18dbEa93C32"; // Replace with recipient's wallet address
+    const amount = hre.ethers.parseEther("0.1"); // Amount of ETH to send (0.1 ETH)
 
     // Get the sender's signer (wallet)
     const [deployer] = await hre.ethers.getSigners(sender);
